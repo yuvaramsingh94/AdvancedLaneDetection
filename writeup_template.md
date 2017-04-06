@@ -1,20 +1,29 @@
-##Writeup Template
-###You can use this file as a template for your writeup if you want to submit it as a markdown file, but feel free to use some other method and submit a pdf if you prefer.
-
----
 
 **Advanced Lane Finding Project**
 
-The goals / steps of this project are the following:
+The steps of this project are the following:
 
-* Compute the camera calibration matrix and distortion coefficients given a set of chessboard images.
-* Apply a distortion correction to raw images.
-* Use color transforms, gradients, etc., to create a thresholded binary image.
-* Apply a perspective transform to rectify binary image ("birds-eye view").
-* Detect lane pixels and fit to find the lane boundary.
-* Determine the curvature of the lane and vehicle position with respect to center.
-* Warp the detected lane boundaries back onto the original image.
-* Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
+* Compute the camera calibration matrix and distortion coefficients given a set of chessboard images and store them as a pickle file.
+* Break the video feed into seperate images .
+* Apply undistortion methods in opencv to correct the input image .
+* Convert Color space from RGB to HLS .
+* From HLS remove the saturation channel and apply threshold .
+* Find the gradient in x direction using sobel and apply threshold to it .
+* Combine both these threshold images into a single one .
+* Define a region of interest mas and apply to the threshold image to remove all the unwanted borders .
+* Apply perspective transformation to the thresholded image to convert it into birds eye view
+* Use techniques like erode , dilate to clean the image from noice
+* Apply histogram to find the center of the lane line
+* If we had already found the lane line in the previous frame , we can use its x value to find the starting point (Don't use Histogram)
+* Using sliding window method provided at udacity , find the lane pixels and fit an second order polynomial
+* From the polynomial function , calculate the radius of curvature by applying this formula
+
+    Image of formula
+* Convert it into meters if needed
+* Find the difference between absolute center and the car center by computing the diffetence between midpoint between the lane and the pic center
+
+* plot the needee thing onto the image (center , binary image )and save them as a video
+
 
 [//]: # (Image References)
 
