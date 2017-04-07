@@ -1,10 +1,9 @@
-
 **Advanced Lane Finding Project**
 
 The steps of this project are the following:
 
 * Compute the camera calibration matrix and distortion coefficients given a set of chessboard images and store them as a pickle file.
-* Break the video feed into seperate images .
+* Break the video feed into separate images .
 * Apply undistortion methods in opencv to correct the input image .
 * Convert Color space from RGB to HLS .
 * From HLS remove the saturation channel and apply threshold .
@@ -12,7 +11,7 @@ The steps of this project are the following:
 * Combine both these threshold images into a single one .
 * Define a region of interest mas and apply to the threshold image to remove all the unwanted borders .
 * Apply perspective transformation to the thresholded image to convert it into birds eye view
-* Use techniques like erode , dilate to clean the image from noice
+* Use techniques like erode , dilate to clean the image from noise
 * Apply histogram to find the center of the lane line
 * If we had already found the lane line in the previous frame , we can use its x value to find the starting point (Don't use Histogram)
 * Using sliding window method provided at udacity , find the lane pixels and fit an second order polynomial
@@ -20,9 +19,9 @@ The steps of this project are the following:
 
     Image of formula
 * Convert it into meters if needed
-* Find the difference between absolute center and the car center by computing the diffetence between midpoint between the lane and the pic center
+* Find the difference between absolute center and the car center by computing the difference between midpoint between the lane and the pic center
 
-* plot the needee thing onto the image (center , binary image )and save them as a video
+* plot the needed things onto the image (center , binary image )and save them as a video
 
 
 [//]: # (Image References)
@@ -49,63 +48,85 @@ You're reading it!
 
 ####1. Briefly state how you computed the camera matrix and distortion coefficients. Provide an example of a distortion corrected calibration image.
 
-The code for this step is contained in the first code cell of the IPython notebook located in "./examples/example.ipynb" (or in lines # through # of the file called `some_file.py`).  
+The code for calculating cam matrix and distortion coeff is at the 4th block . the workflow are,
+* load in the calibration image
+* define object point (X,Y,Z) and image point(X,Y) list
+* using the opencv function (cv2.findChessboardCorners) find the X & Y coordinates of corners in the chessboard image and store these points into image point list. in the object point list , create and store the index of these points ((1,2,0),(3,4,0)...). 
+* using these points and the size of the image , we can compute the matrix and distortion coeff by using opencv function (cv2.calibrateCamera)
 
-I start by preparing "object points", which will be the (x, y, z) coordinates of the chessboard corners in the world. Here I am assuming the chessboard is fixed on the (x, y) plane at z=0, such that the object points are the same for each calibration image.  Thus, `objp` is just a replicated array of coordinates, and `objpoints` will be appended with a copy of it every time I successfully detect all chessboard corners in a test image.  `imgpoints` will be appended with the (x, y) pixel position of each of the corners in the image plane with each successful chessboard detection.  
+Note : in the 3rd code block , specify the path for the chessboard calibration images
 
-I then used the output `objpoints` and `imgpoints` to compute the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function.  I applied this distortion correction to the test image using the `cv2.undistort()` function and obtained this result: 
+ 
 
 ![alt text][image1]
 
 ###Pipeline (single images)
 
 ####1. Provide an example of a distortion-corrected image.
-To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like this one:
+
+from the previous step , we can obtain the cam matrix and the distortion coeff of out camera . using these values , we can use these values to correct the image distortion by sending the image through the cv function cv2.undistort along with the cam matrix and distortion coeff
+
+
+
 ![alt text][image2]
+
+
+
 ####2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
-I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines # through # in `another_file.py`).  Here's an example of my output for this step.  (note: this is not actually from one of the test images)
+
+At code blocks ( 8 and 10 ) i have used HLS thresholding and sobelx thresholding methods to find lines in the image
+
+###### HLS 
+* convert the image colorspace from RGB to HLS
+* separate S channel from the HLS
+* apply thresholding to the output S channel
+
+###### sobelX
+* convert the RGB image to grayscale
+* apply sobel gradient along the x axis using cv function (cv2.Sobel(gray,cv2.CV_64F,1,0))
+* apply threshold to separate the lane lines from the gradient image
+
+finally add both of these images into a single binary image by combining both thresholded images
 
 ![alt text][image3]
 
 ####3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
-The code for my perspective transform includes a function called `warper()`, which appears in lines 1 through 8 in the file `example.py` (output_images/examples/example.py) (or, for example, in the 3rd code cell of the IPython notebook).  The `warper()` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode the source and destination points in the following manner:
+At codeblock 16 , i have defined a function to perform perspective transformation of images . i defined a region (a polygon) and used opencv function (cv2.getPerspectiveTransform(src,des)) . here src = source points and des = destination points . this function will give me a  3x3 matrix of perspective transform . using this matrix , we can transform the binary image into a birds eye view image
 
-```
-src = np.float32(
-    [[(img_size[0] / 2) - 55, img_size[1] / 2 + 100],
-    [((img_size[0] / 6) - 10), img_size[1]],
-    [(img_size[0] * 5 / 6) + 60, img_size[1]],
-    [(img_size[0] / 2 + 55), img_size[1] / 2 + 100]])
-dst = np.float32(
-    [[(img_size[0] / 4), 0],
-    [(img_size[0] / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), 0]])
-
-```
 This resulted in the following source and destination points:
 
 | Source        | Destination   | 
 |:-------------:|:-------------:| 
-| 585, 460      | 320, 0        | 
-| 203, 720      | 320, 720      |
-| 1127, 720     | 960, 720      |
-| 695, 460      | 960, 0        |
+| 760 , 486      | 1080 ,    0        | 
+| 1000 , 700      | 1080 ,   720      |
+| 220 , 700     |  200  , 720     |
+| 560 , 486      | 200   ,  0       |
 
-I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
+img_size = (gray.shape[1],gray.shape[0])
+adjx = 200
+adjy = 0    
+src = np.float32([[760 , 486],[1000 , 700],[220 , 700] , [560 , 486]])        
+des = np.float32([[img_size[0]-adjx,adjy],[img_size[0]-adjx,img_size[1]-adjy],[adjx,img_size[1]-adjy] ,[adjx,adjy]])        
+M = cv2.getPerspectiveTransform(src,des)
+Minv = cv2.getPerspectiveTransform(des,src)
+
 
 ![alt text][image4]
 
 ####4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
 
-Then I did some other stuff and fit my lane lines with a 2nd order polynomial kinda like this:
+At the main code function (AdvLaneFinder) , i have done both  window search to find the white pixels representing lane lines and also fitted a polynomial to it . i reused the same code provided by udacity to do my pixel searching and fitting a polynomial to the points 
+
+window search consist of finding the center point either from a histogram or using the center of the previous lane line found (if we had a good fit in the past) . from that point , initialize a window and start searching form pixels with non zero value (that is 1 ) . if we found pixels which exceeds an arbitrary count , say 100 , we then recenter the window based on the pixel mid point . carryout this same process till you reach the top of the image 
+
+using the point found by the previous method , fit a 2nd order polynomial by using numpy function (np.polyfit)
 
 ![alt text][image5]
 
 ####5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
-I did this in lines # through # in my code in `my_other_file.py`
+for the radius of curvature , i reused the udacity code . for position of vehicle with respected to center , i developed a function called centerFind which is at 15 th code block , calculates the center between the two lanes and compares it with the image center along x axis . the difference in the value is the position of vehicle respective to the center of lane
 
 ####6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
@@ -127,5 +148,11 @@ Here's a [link to my video result](./project_video.mp4)
 
 ####1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+Problems faced 
+
+* the process of choosing src and des points for perspective transformation is tedious because slight change in points can affect the orientation of the transformed image
+* presence of shadow and sudden jerk in the video can affect the lane finding process
+* this model works well for flat roads . roads with up and down are a bit challenging 
+* threshold values need to be modified for various road and video conditions . using a fixed value give rise to a problem of not being generalized (finds lot of noise )
+* implement polynomial check for more robust model
 
