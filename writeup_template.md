@@ -7,17 +7,16 @@ The steps of this project are the following:
 * Apply undistortion methods in opencv to correct the input image .
 * Convert Color space from RGB to HLS .
 * From HLS remove the saturation channel and apply threshold .
-* Find the gradient in x direction using sobel and apply threshold to it .
-* Combine both these threshold images into a single one .
-* Define a region of interest mas and apply to the threshold image to remove all the unwanted borders .
+* Find the gradient in x and y direction using sobel and apply magnitude formula to find the Magnitude of gradient .
+* From RGB image , seperate the R channel and apply threshold
+* Combine all these threshold images into a single one .
+* Define a region of interest mask and apply it to the threshold image to remove all the unwanted borders .
 * Apply perspective transformation to the thresholded image to convert it into birds eye view
 * Use techniques like erode , dilate to clean the image from noise
 * Apply histogram to find the center of the lane line
 * If we had already found the lane line in the previous frame , we can use its x value to find the starting point (Don't use Histogram)
 * Using sliding window method provided at udacity , find the lane pixels and fit an second order polynomial
 * From the polynomial function , calculate the radius of curvature by applying this formula
-
-    Image of formula
 * Convert it into meters if needed
 * Find the difference between absolute center and the car center by computing the difference between midpoint between the lane and the pic center
 
@@ -76,19 +75,23 @@ from the previous step , we can obtain the cam matrix and the distortion coeff o
 
 ####2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
 
-At code blocks ( 8 and 10 ) i have used HLS thresholding and sobelx thresholding methods to find lines in the image
+At code blocks ( 7,9 and 11 ) i have used HLS , Magnitude of grad and Red channal Threshold methods to find lines in the image
 
 ###### HLS 
 * convert the image colorspace from RGB to HLS
 * separate S channel from the HLS
 * apply thresholding to the output S channel
 
-###### sobelX
-* convert the RGB image to grayscale
-* apply sobel gradient along the x axis using cv function (cv2.Sobel(gray,cv2.CV_64F,1,0))
-* apply threshold to separate the lane lines from the gradient image
+###### Magnitude of gradient
+* find the sobel x and y of the image
+* apply np.sqrt(np.square(sobelx)+np.square(sobely))
+* apply threshold to the magnitude
 
-finally add both of these images into a single binary image by combining both thresholded images
+###### Red channel Seperation
+* seperate the red channel of the image from our RGB image
+* apply threshold to the Red channel
+
+finally add all these images into a single binary image by combining  thresholded images
 
 ![alt text][image4]
 
@@ -100,10 +103,10 @@ This resulted in the following source and destination points:
 
 | Source        | Destination   | 
 |:-------------:|:-------------:| 
-| 760 , 486      | 1080 ,    0        | 
+| 740 , 486      | 1080 ,    0        | 
 | 1000 , 700      | 1080 ,   720      |
-| 220 , 700     |  200  , 720     |
-| 560 , 486      | 200   ,  0       |
+| 250 , 700     |  200  , 720     |
+| 580 , 486      | 200   ,  0       |
 
 img_size = (gray.shape[1],gray.shape[0])
 adjx = 200
@@ -132,6 +135,12 @@ using the point found by the previous method , fit a 2nd order polynomial by usi
 
 for the radius of curvature , i reused the udacity code . for position of vehicle with respected to center , i developed a function called centerFind which is at 15 th code block , calculates the center between the two lanes and compares it with the image center along x axis . the difference in the value is the position of vehicle respective to the center of lane
 
+leftX = leftX # ramains same
+rightX = rightX-leftX
+centerX = centerX - leftX
+center is off by 
+off = (centerX - (rightX/2))* xm_per_pix
+
 ####6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
 this is the output of funciton AdvLaneFinder
@@ -146,7 +155,7 @@ this is the output of funciton AdvLaneFinder
 
 Youtube link to my video
 
-https://www.youtube.com/watch?v=yq3KIuZ9WW8
+https://www.youtube.com/watch?v=GlAbh_9T4f4
 
 ---
 
